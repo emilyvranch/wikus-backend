@@ -16,20 +16,24 @@ app.use(bodyParser.json());
 
 app.post("/haiku", async (req, res) => {
   const { title, summary } = req.body;
-
-  const prompt = `Write a 3-line haiku (5-7-5 syllables) that captures the essence of a Wikipedia article titled "${title}" with the following summary:\n\n"${summary}"`;
+  console.log("Received haiku request:", { title, summary });
 
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: `Write a haiku about this topic:\nTitle: ${title}\nSummary: ${summary}`,
+        },
+      ],
       model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
     });
 
-    const haiku = completion.data.choices[0].message.content.trim();
+    const haiku = completion.choices[0].message.content;
     res.json({ haiku });
+
   } catch (error) {
-    console.error("Error from OpenAI:", error);
+    console.error("OpenAI error:", error.response?.data || error.message || error);
     res.status(500).json({ error: "Failed to generate haiku." });
   }
 });
